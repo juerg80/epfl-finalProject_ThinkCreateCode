@@ -32,8 +32,13 @@ def homepage():
 
 @app.route("/init")
 def init():
+    global config
+    global shift_id
+    global current_shift
+    global last_shift
+
     config=init_config(config_File)
-    shift_id=1
+    shift_id=0
     map_distances=read_map(map_distances_file)
     map_altitudes=read_map(map_altitudes_file)
     map={"distances":map_distances,"altitudes":map_altitudes}
@@ -42,15 +47,31 @@ def init():
     return get_html("index").replace("$$STATUS$$","Game initialised")
 
 @app.route("/PrepareNextShift")
-def prepare_next_shift():
+def PrepareNextShift():
+    global current_shift
+    global last_shift
+
     last_shift=current_shift
-    current_shift=prepare_next_shift()
-    pass
+    current_shift=prepare_next_shift(shift_id,config,last_shift)
+    
+    # Build html lists
+    content_riders=current_shift.availRiders
+    result_riders=""
+    for line in content_riders:
+         result_riders+="<p class='availRider'>"+ line +"</p>"
+
+    content_orders=current_shift.orders
+    result_orders=""
+    for line in content_orders:
+         result_orders+="<p class='availOrders'>"+ line.start_loc + line.start_time + line.end_loc + line.end_time + str(line.volume) +"</p>"
+
+    return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders)
+    
 
 @app.route("/GetRiderAssignment")
-def get_rider_assignment():
+def GetRiderAssignment():
     pass
 
 @app.route("/BuildShift")
-def build_shift():
+def BuildShift():
     pass
