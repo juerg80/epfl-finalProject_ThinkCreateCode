@@ -1,0 +1,4 @@
+Cash: 100
+f1_avgSpeet: 25
+f1_varSalary: 30
+map1: Company,A,B,C,D,E,F,G
