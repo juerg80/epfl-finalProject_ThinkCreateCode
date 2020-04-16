@@ -7,13 +7,22 @@
 </head>
 <body>
     <h1>Assign the orders to the riders</h1>
+    <h2>Available riders:</h2>
     <p id="AvailRider">
         $$AVAILABLERIDERS$$
     </p>
 
+    <h2>Orders:</h2>
     <p id="AvailOrders">
         $$AVAILORDERS$$
     </p>
+
+    <h2>Your assignment:</h2>
+
+    <form action="/GetRiderAssignment" method="get">
+        $$ASSIGNMENT$$
+        <input type="submit" class="Button_Main" id="bt_applyAssignments" value="Apply Assignment">
+    </form>
 
 </body>
 </html>

@@ -54,13 +54,51 @@ def get_orders():
     #@work
     order_list=[]
     order_1=order('A','10:00','B','12:00')
+    order_2=order('C','09:00','D','11:30')
     order_list.append(order_1)
+    order_list.append(order_2)
     return order_list
 
 def get_available_riders():
     #@work
     rider_list=['f1']
     return rider_list
+
+# Modul Build Shift
+
+def transform_assignment(assignment_raw,current_shift):
+    # transforms html params in dict
+    num_riders=len(current_shift.availRiders)
+    assignment={}
+    for i in range (0,num_riders):
+        assignment_list=assignment_raw[i].split(';')
+        rider=current_shift.availRiders[i]
+        assignment.update({rider:assignment_list})
+    return assignment
+
+
+def check_assignment(assignment):
+    #@work
+    return True
+
+def build_shift(current_shift,assignment):
+    tours={}
+    num_riders=len(assignment)
+    for i in range(0,num_riders):
+        tour=get_tour(assignment[current_shift.availRiders[i]])
+        tours.update({current_shift.availRiders[i]:tour})
+
+    current_shift.tours=tours
+
+    return current_shift
+
+
+def get_tour(assignment_i):
+    #@work
+    
+
+
+  
 
 # Classes
 class order:
@@ -74,11 +112,13 @@ class order:
     def getVolume(self):
         #@work
         volume=200
-        return 200
+        return volume
 
 
 class rider:
-    def __init__(self,avgSpeed,varSalary,fixSalary,reliability,workload):
+    def __init__(self,name,nickname,avgSpeed,varSalary,fixSalary,reliability,workload):
+        self.name=name
+        self.nickname=nickname
         self.avgSpeed=avgSpeed
         self.varSalary=varSalary
         self.fixSalary=fixSalary
@@ -95,6 +135,7 @@ class shift:
         self.weather=self.get_weather()
         self.agg_fine=self.get_agg_fine() # verkehrsbussen tot chf
         self.assignment=assignment
+        self.tours={}
     
     def get_weather(self):
         #@work

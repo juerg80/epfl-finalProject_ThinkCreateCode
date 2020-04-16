@@ -62,15 +62,40 @@ def PrepareNextShift():
 
     content_orders=current_shift.orders
     result_orders=""
+    count=1
     for line in content_orders:
-         result_orders+="<p class='availOrders'>"+ line.start_loc + line.start_time + line.end_loc + line.end_time + str(line.volume) +"</p>"
+        result_orders+="<p class='availOrders'>"+ 'O' +str(count) +': ' + line.start_loc + line.start_time + line.end_loc + line.end_time + str(line.volume) +"</p>"
+        count=count+1
 
-    return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders)
+    # Build Forms
+    num_riders=len(current_shift.availRiders)
+    forms=""
+    for i in range(0,num_riders):
+        forms+=current_shift.availRiders[i] + ": " + "<input type='text' name=" + current_shift.availRiders[i] + " class='assign_rider_spec' value='Enter Orders in chronological order, separeted with ;'>"
+    
+    return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders).replace("$$ASSIGNMENT$$",forms)
     
 
 @app.route("/GetRiderAssignment")
 def GetRiderAssignment():
-    pass
+    num_riders=len(current_shift.availRiders)
+    assignment_raw=[]
+    for i in range(0,num_riders):
+        assignment=flask.request.args.get(current_shift.availRiders[i])
+        assignment_raw.append(assignment)
+    
+    # transform and check assignment
+    assignment=transform_assignment(assignment_raw,current_shift)
+    result_check_assignment=check_assignment(assignment)
+
+    if result_check_assignment==False:
+        #@work (erneuter assigment aufruf mit status fehlermeldung oder so...)
+        pass
+
+    # Build new shift
+    build_shift()
+
+    return get_html("index").replace("$$STATUS$$","Riders assigned")
 
 @app.route("/BuildShift")
 def BuildShift():
