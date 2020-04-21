@@ -1,7 +1,11 @@
-Cash: 100
-NumberRiders: 1
-f1_name: Rob
-f1_nickname: Speedy
-f1_avgSpeet: 25
-f1_varSalary: 30
-map1: Company,A,B,C,D,E,F,G
+Cash:100
+NumberRiders:1
+RiderNames:f1
+f1_name:Rob
+f1_nickname:Speedy
+f1_avgSpeed:25
+f1_varSalary:30
+f1_fixSalary:50
+f1_workload:1
+f1_reliability:1
+map1:Company,A,B,C,D,E,F,G
