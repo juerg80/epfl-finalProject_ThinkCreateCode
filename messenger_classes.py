@@ -42,11 +42,9 @@ def getStatus():
 # Modul: Prepare Next Shift
 def prepare_next_shift(shift_id,config,riders,last_shift={}):
     if shift_id==0: # initial state
-        cash_last_shift=0
         available_riders=riders
         time_shift={'t_start': dt.time(8,0,0),'t_end': dt.time(12,0,0)}
     else:
-        cash_last_shift=get_cash_last_shift()
         available_riders=get_available_riders(riders)
         time_shift=get_time_shift()
     
@@ -172,6 +170,7 @@ class shift:
         self.agg_fine=self.get_agg_fine() # verkehrsbussen tot chf
         self.assignment=assignment
         self.tours={}
+        self.stats={}
     
     def get_weather(self):
         #@work
@@ -180,6 +179,15 @@ class shift:
     def get_agg_fine(self):
         #@work
         return 75
+    
+    def get_cash_booking(self):
+        # check ob last shift of day -> salaere weg
+        # agg fines
+        # sum over eval steps        
+        return 100
+
+    def get_stats(self):
+        pass
 
 class tour:
     def __init__(self,rider,steps):
@@ -218,6 +226,12 @@ class step:
         my_distance=self.map.get_distance(self.loc_start,self.loc_end)
         t_end_ist=dt.time(self.t_start.hour, self.t_start.minute + int((my_distance/self.avgSpeed_ist)*60))
         return t_end_ist
+    
+    def evaluate_step(self):
+        # gets net cash revenue from step
+        #@work
+        return 20
+
 
 
 class map:
@@ -238,4 +252,27 @@ class company:
     pass
 
 class cashaccount:
+    def __init__(self,initial_cash):
+        self.tot=initial_cash
+    
+    def add(self,amount):
+        if amount<0:
+            res=self.remove(-amount)
+        else:
+            self.tot=self.tot+amount
+            res=1
+        return res
+
+
+    def remove(self,amount):
+        if amount>self.tot:
+            res=0
+        else:
+            self.tot=self.tot-amount
+            res=1
+        return res
+
+
+class statistics:
+    # summarising various figures for given shift
     pass

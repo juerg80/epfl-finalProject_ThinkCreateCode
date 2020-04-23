@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>
-        Bicycle Messenger Simulation Game
+        Run your own bicycle messenger service!
     </h1>
 
     <p>
@@ -18,8 +18,16 @@
         $$VARSTATS$$
     </p>
 
+    <p>
+        $$CASHACCOUNT$$
+    </p>
+
     <form action="/init" method="get">
         <input type="submit" id="bt_InitGame"  class="Button_Main" value="Init Game">
+    </form>
+
+    <form action="/ShowStats" method="get">
+        <input type="submit" id="bt_ShowStats"  class="Button_Main" value="Show Stats Last Shift">
     </form>
 
     <form action="/PrepareNextShift" method="get">

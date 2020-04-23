@@ -16,6 +16,7 @@ my_map=map([],[],[])
 current_shift={}
 last_shift={}
 riders=[]
+my_cash=cashaccount(0)
 
 
 # define some functions
@@ -29,7 +30,7 @@ def get_html(page_name):
 # Specify routes
 @app.route("/")
 def homepage():
-    return get_html("index")
+    return get_html("index").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
 @app.route("/init")
 def init():
@@ -39,6 +40,7 @@ def init():
     global last_shift
     global my_map
     global riders
+    global my_cash
 
     config=init_config(config_File)
     shift_id=0
@@ -49,10 +51,12 @@ def init():
     for i in range (0,int(config['NumberRiders'])):
         res=gen_rider(i+1,config)
         riders.append(res)
+    
+    my_cash.add(int(config['Cash']))
 
     current_shift=shift(dt.time(8,0,0),dt.time(12,0,0),shift_id,[],[],[])
     last_shift={}
-    return get_html("index").replace("$$STATUS$$","Game initialised").replace("$$VARSTATS$$","Shift ID: " + str(shift_id))
+    return get_html("index").replace("$$STATUS$$","Game initialised").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
 @app.route("/PrepareNextShift")
 def PrepareNextShift():
@@ -106,5 +110,13 @@ def GetRiderAssignment():
     # Build new shift
     current_shift=build_shift(current_shift,assignment,my_map)
 
-    return get_html("index").replace("$$STATUS$$","Riders assigned").replace("$$VARSTATS$$",'Shift ID: '+ str(current_shift.shift_id))
+    # get Cash Booking and stats
+    my_cash.add(current_shift.get_cash_booking())
+    current_shift.get_stats()
     
+    return get_html("index").replace("$$STATUS$$","Riders assigned").replace("$$VARSTATS$$",'Shift ID: '+ str(current_shift.shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
+
+
+@app.route("/ShowStats")
+def show_stats():
+    return get_html('ShowStats')
