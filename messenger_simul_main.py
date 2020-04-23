@@ -54,7 +54,7 @@ def init():
     
     my_cash.add(int(config['Cash']))
 
-    current_shift=shift(dt.time(8,0,0),dt.time(12,0,0),shift_id,[],[],[])
+    current_shift=shift(dt.time(8,0,0),dt.time(12,0,0),shift_id,[],[],[],my_map)
     last_shift={}
     return get_html("index").replace("$$STATUS$$","Game initialised").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
@@ -64,7 +64,7 @@ def PrepareNextShift():
     global last_shift
 
     last_shift=current_shift
-    current_shift=prepare_next_shift(current_shift.shift_id,config,riders,last_shift)
+    current_shift=prepare_next_shift(current_shift.shift_id,config,riders,my_map,last_shift)
     
     # Build html lists
     content_riders=current_shift.availRiders
@@ -108,7 +108,7 @@ def GetRiderAssignment():
         pass
 
     # Build new shift
-    current_shift=build_shift(current_shift,assignment,my_map)
+    current_shift.build_shift(assignment,my_map)
 
     # get Cash Booking and stats
     my_cash.add(current_shift.get_cash_booking())

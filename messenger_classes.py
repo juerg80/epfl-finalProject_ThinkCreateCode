@@ -40,7 +40,7 @@ def getStatus():
     pass
 
 # Modul: Prepare Next Shift
-def prepare_next_shift(shift_id,config,riders,last_shift={}):
+def prepare_next_shift(shift_id,config,riders,map,last_shift={}):
     if shift_id==0: # initial state
         available_riders=riders
         time_shift={'t_start': dt.time(8,0,0),'t_end': dt.time(12,0,0)}
@@ -51,7 +51,7 @@ def prepare_next_shift(shift_id,config,riders,last_shift={}):
     order_list=get_orders()
 
     # init Shift
-    new_shift=shift(time_shift['t_start'],time_shift['t_start'],shift_id+1,available_riders,order_list,{})
+    new_shift=shift(time_shift['t_start'],time_shift['t_start'],shift_id+1,available_riders,order_list,{},map)
     return new_shift
 
 def get_time_shift():
@@ -98,43 +98,43 @@ def check_assignment(assignment):
     #@work
     return True
 
-def build_shift(current_shift,assignment,map):
-    tours=[]
-    num_riders=len(assignment)
-    for i in range(0,num_riders):
-        my_tour=get_tour(current_shift.availRiders[i],assignment[current_shift.availRiders[i]],map)
-        my_rider=current_shift.availRiders[i]
-        tours.append(tour(my_rider,my_tour))
+# def build_shift(current_shift,assignment,map):
+#     tours=[]
+#     num_riders=len(assignment)
+#     for i in range(0,num_riders):
+#         my_tour=get_tour(current_shift.availRiders[i],assignment[current_shift.availRiders[i]],map)
+#         my_rider=current_shift.availRiders[i]
+#         tours.append(tour(my_rider,my_tour))
 
-    current_shift.tours=tours
+#     current_shift.tours=tours
 
-    return current_shift
+#     return current_shift
 
 
-def get_tour(my_rider,my_orders,map):
-    num_orders=len(my_orders)
-    num_steps=2+num_orders+(num_orders-1)
-    my_tour=[]
-    count_order=-1
-    for i in range(0,num_steps):
-        if i==0:
-            flag='Transfer_init'
-            my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
-                        my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
-                        my_rider,map)
-        elif i==num_steps-1:
-            flag='Transfer_end'
-        elif i%2==0:
-            flag='Transfer'
-        else:
-            flag='Order'
-            count_order=count_order+1
-            my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
-                        my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
-                        my_rider,map)
+# def get_tour(my_rider,my_orders,map):
+#     num_orders=len(my_orders)
+#     num_steps=2+num_orders+(num_orders-1)
+#     my_tour=[]
+#     count_order=-1
+#     for i in range(0,num_steps):
+#         if i==0:
+#             flag='Transfer_init'
+#             my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
+#                         my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
+#                         my_rider,map)
+#         elif i==num_steps-1:
+#             flag='Transfer_end'
+#         elif i%2==0:
+#             flag='Transfer'
+#         else:
+#             flag='Order'
+#             count_order=count_order+1
+#             my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
+#                         my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
+#                         my_rider,map)
 
-        my_tour.append(my_step)
-    return my_tour
+#         my_tour.append(my_step)
+#     return my_tour
 
 
 # Classes
@@ -164,7 +164,7 @@ class rider:
         self.workload=workload # pensum
 
 class shift:
-    def __init__(self,t_start,t_end,shift_id,availRiders,orders,assignment):
+    def __init__(self,t_start,t_end,shift_id,availRiders,orders,assignment,map):
         self.t_start=t_start
         self.t_end=t_end
         self.shift_id=shift_id # id
@@ -173,7 +173,7 @@ class shift:
         self.weather=self.get_weather()
         self.agg_fine=self.get_agg_fine() # verkehrsbussen tot chf
         self.assignment=assignment
-        self.tours={}
+        self.tours=self.build_shift(assignment,map)
         self.stats={}
     
     def get_weather(self):
@@ -204,6 +204,66 @@ class shift:
 
     def get_stats(self):
         pass
+
+    def build_shift(self,assignment,map):
+        tours=[]
+        num_riders=len(assignment)
+        for i in range(0,num_riders):
+            my_rider=self.availRiders[i]
+            my_tour=self.get_tour(my_rider,assignment[self.availRiders[i]],map)
+            tours.append(tour(my_rider,my_tour))
+        return tours
+
+    def get_tour(self,my_rider,my_orders,my_map):
+        num_orders=len(my_orders)
+        num_steps=2+num_orders+(num_orders-1)
+        my_tour=[]
+        count_order=-1
+        for i in range(0,num_steps):
+            if i==0:
+                flag='Transfer_init'
+                t_start=self.t_start
+                t_end_soll=my_orders[0].start_time
+                loc_start='Company'
+                loc_end=my_orders[0].start_loc
+                volume=0
+                rider=my_rider
+                map=my_map
+
+            elif i==num_steps-1:
+                flag='Transfer_end'
+                t_start=my_orders[num_orders-1].start_time
+                t_end_soll=self.t_end
+                loc_start=my_orders[num_orders-1].end_loc
+                loc_end='Company'
+                volume=0
+                rider=my_rider
+                map=my_map
+
+            elif i%2==0:
+                flag='Transfer'
+                t_start=my_orders[count_order].end_time
+                t_end_soll=my_orders[count_order+1].start_time
+                loc_start=my_orders[count_order].end_loc
+                loc_end=my_orders[count_order+1].start_loc
+                volume=0
+                rider=my_rider
+                map=my_map
+
+            else:
+                count_order=count_order+1
+                flag='Order'
+                t_start=my_orders[count_order].start_time
+                t_end_soll=my_orders[count_order].end_time
+                loc_start=my_orders[count_order].start_loc
+                loc_end=my_orders[count_order].end_loc
+                volume=my_orders[count_order].volume
+                rider=my_rider
+                map=my_map
+                
+            my_step=step(flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map)
+            my_tour.append(my_step)
+        return my_tour
 
 class tour:
     def __init__(self,rider,steps):
