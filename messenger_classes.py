@@ -99,11 +99,12 @@ def check_assignment(assignment):
     return True
 
 def build_shift(current_shift,assignment,map):
-    tours={}
+    tours=[]
     num_riders=len(assignment)
     for i in range(0,num_riders):
-        tour=get_tour(current_shift.availRiders[i],assignment[current_shift.availRiders[i]],map)
-        tours.update({current_shift.availRiders[i]:tour})
+        my_tour=get_tour(current_shift.availRiders[i],assignment[current_shift.availRiders[i]],map)
+        my_rider=current_shift.availRiders[i]
+        tours.append(tour(my_rider,my_tour))
 
     current_shift.tours=tours
 
@@ -118,6 +119,9 @@ def get_tour(my_rider,my_orders,map):
     for i in range(0,num_steps):
         if i==0:
             flag='Transfer_init'
+            my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
+                        my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
+                        my_rider,map)
         elif i==num_steps-1:
             flag='Transfer_end'
         elif i%2==0:
@@ -125,10 +129,10 @@ def get_tour(my_rider,my_orders,map):
         else:
             flag='Order'
             count_order=count_order+1
+            my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
+                        my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
+                        my_rider,map)
 
-        my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
-                    my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
-                    my_rider,map)
         my_tour.append(my_step)
     return my_tour
 
@@ -181,10 +185,22 @@ class shift:
         return 75
     
     def get_cash_booking(self):
-        # check ob last shift of day -> salaere weg
-        # agg fines
-        # sum over eval steps        
-        return 100
+        tot_amount=0
+
+        # salaries
+        if self.t_end==dt.time(22,0,0):
+            #@work: book salaries
+            pass
+        
+        # fines
+        tot_amount=tot_amount-self.agg_fine
+
+        # cash from tours (ass: sign correct)
+        for tour in self.tours:
+            for step in tour.steps:
+                tot_amount=tot_amount+step.evaluate_step()
+        
+        return tot_amount
 
     def get_stats(self):
         pass
@@ -193,6 +209,14 @@ class tour:
     def __init__(self,rider,steps):
         self.rider=rider
         self.steps=steps
+        self.get_rework_steps()
+
+    def get_rework_steps(self):
+        # correkt start_times and set failure flag
+        for i in range(0,len(self.steps)):
+            #@work
+            pass
+
 
 class step:
     def __init__(self,flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map):
@@ -207,6 +231,7 @@ class step:
         self.avgSpeed_ist=self.get_avgSpeed_ist(rider)
         self.t_end_ist=self.get_t_end_ist()
         self.bike_issue=self.get_bikeIssue()
+        self.is_fail=''
         
 
     def get_bikeIssue(self):
@@ -231,6 +256,7 @@ class step:
         # gets net cash revenue from step
         #@work
         return 20
+
 
 
 
