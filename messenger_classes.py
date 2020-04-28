@@ -51,7 +51,7 @@ def prepare_next_shift(shift_id,config,riders,map,last_shift={}):
     order_list=get_orders()
 
     # init Shift
-    new_shift=shift(time_shift['t_start'],time_shift['t_end'],shift_id+1,available_riders,order_list,{},map)
+    new_shift=shift(time_shift['t_start'],time_shift['t_end'],shift_id+1,available_riders,order_list,config,{},map)
     return new_shift
 
 def get_time_shift():
@@ -98,44 +98,6 @@ def check_assignment(assignment):
     #@work
     return True
 
-# def build_shift(current_shift,assignment,map):
-#     tours=[]
-#     num_riders=len(assignment)
-#     for i in range(0,num_riders):
-#         my_tour=get_tour(current_shift.availRiders[i],assignment[current_shift.availRiders[i]],map)
-#         my_rider=current_shift.availRiders[i]
-#         tours.append(tour(my_rider,my_tour))
-
-#     current_shift.tours=tours
-
-#     return current_shift
-
-
-# def get_tour(my_rider,my_orders,map):
-#     num_orders=len(my_orders)
-#     num_steps=2+num_orders+(num_orders-1)
-#     my_tour=[]
-#     count_order=-1
-#     for i in range(0,num_steps):
-#         if i==0:
-#             flag='Transfer_init'
-#             my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
-#                         my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
-#                         my_rider,map)
-#         elif i==num_steps-1:
-#             flag='Transfer_end'
-#         elif i%2==0:
-#             flag='Transfer'
-#         else:
-#             flag='Order'
-#             count_order=count_order+1
-#             my_step=step(flag,my_orders[count_order].start_time,my_orders[count_order].end_time,
-#                         my_orders[count_order].start_loc,my_orders[count_order].end_loc,my_orders[count_order].volume,
-#                         my_rider,map)
-
-#         my_tour.append(my_step)
-#     return my_tour
-
 
 # Classes
 class order:
@@ -164,17 +126,17 @@ class rider:
         self.workload=workload # pensum
 
 class shift:
-    def __init__(self,t_start,t_end,shift_id,availRiders,orders,assignment,map):
+    def __init__(self,t_start,t_end,shift_id,availRiders,orders,config,assignment,map):
         self.t_start=t_start
         self.t_end=t_end
         self.shift_id=shift_id # id
         self.availRiders=availRiders
         self.orders=orders
+        self.config=config
         self.weather=self.get_weather()
         self.agg_fine=self.get_agg_fine() # verkehrsbussen tot chf
-        self.assignment=assignment
-        self.tours=self.build_shift(assignment,map)
-        self.stats={}
+        self.build_shift(assignment,map)
+        self.get_stats()
     
     def get_weather(self):
         #@work
@@ -183,6 +145,11 @@ class shift:
     def get_agg_fine(self):
         #@work
         return 75
+
+    def check_missed_orders(self):
+        # returns a list of orders which have not been assigned
+        #@work
+        return []
     
     def get_cash_booking(self):
         tot_amount=0
@@ -200,10 +167,21 @@ class shift:
             for step in tour.steps:
                 tot_amount=tot_amount+step.evaluate_step()
         
+        # check for missed orders
+        my_missed_orders=self.check_missed_orders()
+        my_missed_volume_tot=0
+        for order in my_missed_orders:
+            my_missed_volume_tot=my_missed_volume_tot + order.volume 
+        tot_amount=tot_amount + my_missed_volume_tot * float(self.config['PenaltyMissedOrder'])
+        
         return tot_amount
 
     def get_stats(self):
-        pass
+        # build dict with stats to show to user
+        res={}
+        res.update({'Shift ID: ': self.shift_id})
+        res.update({'Assignment' : self.assignment})
+        self.stats=res
 
     def build_shift(self,assignment,map):
         tours=[]
@@ -213,6 +191,7 @@ class shift:
             my_tour=self.get_tour(my_rider,assignment[self.availRiders[i]],map)
             tours.append(tour(my_rider,my_tour))
         self.tours=tours
+        self.assignment=assignment
 
     def get_tour(self,my_rider,my_orders,my_map):
         num_orders=len(my_orders)
@@ -261,7 +240,7 @@ class shift:
                 rider=my_rider
                 map=my_map
                 
-            my_step=step(flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map)
+            my_step=step(flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map,self.config)
             my_tour.append(my_step)
         return my_tour
 
@@ -299,7 +278,7 @@ class tour:
 
 
 class step:
-    def __init__(self,flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map):
+    def __init__(self,flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map,config):
         self.flag=flag
         self.t_start=t_start
         self.t_end_soll=t_end_soll
@@ -308,6 +287,7 @@ class step:
         self.volume=volume
         self.rider=rider
         self.map=map
+        self.config=config
         self.avgSpeed_ist=self.get_avgSpeed_ist(rider)
         self.t_end_ist=self.get_t_end_ist()
         self.bike_issue=self.get_bikeIssue()
@@ -336,9 +316,16 @@ class step:
         return t_end_ist
     
     def evaluate_step(self):
-        # gets net cash revenue from step
-        #@work
-        return 20
+        # gets brutto cash revenue from step
+        if self.flag=="Order":
+            if self.is_fail==True:
+                res=-self.volume * float(self.config['PenaltyMissedOrder'])
+            else:
+                res=self.volume
+        else:
+            res=0
+
+        return res
 
 
 
