@@ -51,7 +51,7 @@ def prepare_next_shift(shift_id,config,riders,map,last_shift={}):
     order_list=get_orders()
 
     # init Shift
-    new_shift=shift(time_shift['t_start'],time_shift['t_start'],shift_id+1,available_riders,order_list,{},map)
+    new_shift=shift(time_shift['t_start'],time_shift['t_end'],shift_id+1,available_riders,order_list,{},map)
     return new_shift
 
 def get_time_shift():
@@ -212,7 +212,7 @@ class shift:
             my_rider=self.availRiders[i]
             my_tour=self.get_tour(my_rider,assignment[self.availRiders[i]],map)
             tours.append(tour(my_rider,my_tour))
-        return tours
+        self.tours=tours
 
     def get_tour(self,my_rider,my_orders,my_map):
         num_orders=len(my_orders)
@@ -232,7 +232,7 @@ class shift:
 
             elif i==num_steps-1:
                 flag='Transfer_end'
-                t_start=my_orders[num_orders-1].start_time
+                t_start=my_orders[num_orders-1].end_time
                 t_end_soll=self.t_end
                 loc_start=my_orders[num_orders-1].end_loc
                 loc_end='Company'
@@ -274,8 +274,28 @@ class tour:
     def get_rework_steps(self):
         # correkt start_times and set failure flag
         for i in range(0,len(self.steps)):
-            #@work
-            pass
+            if self.steps[i].flag=='Transfer':
+                self.steps[i].t_start=self.steps[i-1].t_end_ist
+                self.steps[i].t_end_ist=self.steps[i].get_t_end_ist()
+                self.steps[i].is_fail=False
+            elif self.steps[i].flag=='Transfer_init':
+                self.steps[i].is_fail=False
+            elif self.steps[i].flag=='Transfer_end':
+                self.steps[i].t_start=self.steps[i-1].t_end_ist
+                self.steps[i].t_end_ist=self.steps[i].get_t_end_ist()
+                if self.steps[i].t_end_ist>self.steps[i].t_end_soll:
+                    self.steps[i].is_fail=True
+                else:
+                    self.steps[i].is_fail=False
+            elif self.steps[i].flag=='Order':
+                self.steps[i].t_start=max(self.steps[i-1].t_end_ist,self.steps[i].t_start)
+                self.steps[i].t_end_ist=self.steps[i].get_t_end_ist()
+                if (self.steps[i-1].t_end_ist > self.steps[i].t_end_soll) or \
+                    (self.steps[i].t_end_ist > self.steps[i].t_end_soll):
+                    self.steps[i].is_fail=True
+                else:
+                    self.steps[i].is_fail=False
+
 
 
 class step:
@@ -309,7 +329,10 @@ class step:
 
     def get_t_end_ist(self):
         my_distance=self.map.get_distance(self.loc_start,self.loc_end)
-        t_end_ist=dt.time(self.t_start.hour, self.t_start.minute + int((my_distance/self.avgSpeed_ist)*60))
+        Tot_mins=self.t_start.minute + int((my_distance/self.avgSpeed_ist)*60)
+        mins=Tot_mins % 60
+        hours=int((Tot_mins - mins) / 60)        
+        t_end_ist=dt.time(self.t_start.hour + hours , mins)
         return t_end_ist
     
     def evaluate_step(self):
