@@ -1,5 +1,5 @@
 Cash:100
-NumberRiders:1
+NumberRiders:2
 RiderNames:f1
 f1_name:Rob
 f1_nickname:Speedy
@@ -8,4 +8,13 @@ f1_varSalary:30
 f1_fixSalary:50
 f1_workload:1
 f1_reliability:1
+RiderNames:f2
+f2_name:Jonny
+f2_nickname:Cheapy
+f2_avgSpeed:15
+f2_varSalary:20
+f2_fixSalary:30
+f2_workload:1
+f2_reliability:1
 map1:Company,A,B,C,D,E,F,G
+PenaltyMissedOrder:0.1

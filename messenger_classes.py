@@ -89,7 +89,6 @@ def transform_assignment(assignment_raw,current_shift):
         my_orderlist=[]
         for i in assignment_list:
             my_orderlist.append(order_list[int(i)-1])
-
         assignment.update({rider:my_orderlist})
     return assignment
 
@@ -112,6 +111,12 @@ class order:
         #@work
         volume=200
         return volume
+    
+    def get_summary(self):
+        # for stats output
+        res='Start: '+ self.start_loc + '(' + str(self.start_time) + ') - End: '+ self.end_loc + '(' + str(self.end_time) + \
+            ') - Volume: ' + str(self.volume)
+        return res
 
 
 class rider:
@@ -119,7 +124,6 @@ class rider:
         self.name=name
         self.nickname=nickname
         self.avgSpeed=avgSpeed
-        self.varSalary=varSalary
         self.fixSalary=fixSalary
         self.varSalary=varSalary
         self.reliability=reliability
@@ -136,7 +140,6 @@ class shift:
         self.weather=self.get_weather()
         self.agg_fine=self.get_agg_fine() # verkehrsbussen tot chf
         self.build_shift(assignment,map)
-        self.get_stats()
     
     def get_weather(self):
         #@work
@@ -150,6 +153,19 @@ class shift:
         # returns a list of orders which have not been assigned
         #@work
         return []
+
+    def get_order_exec_summary(self):
+        # returns dict with number of assigned and succ executed and assigned and failed
+        num_success=0
+        num_fail=0
+        for tour in self.tours:
+            for step in tour.steps:
+                if step.flag=='Order' and step.is_fail==True:
+                    num_fail=num_fail+1
+                elif step.flag=='Order' and step.is_fail==False:
+                    num_success=num_success+1
+        res={'num_success':num_success,'num_fail':num_fail}
+        return res
     
     def get_cash_booking(self):
         tot_amount=0
@@ -179,8 +195,36 @@ class shift:
     def get_stats(self):
         # build dict with stats to show to user
         res={}
-        res.update({'Shift ID: ': self.shift_id})
-        res.update({'Assignment' : self.assignment})
+
+        # shift id
+        res.update({'Shift ID: ': str(self.shift_id)})
+        
+        # Orders
+        num_orders=len(self.orders)
+        res.update({'Total Number of incoming orders: ': str(num_orders)})
+
+        num_missed=len(self.check_missed_orders())
+        order_exec=self.get_order_exec_summary()
+        num_successfully_exec_orders=order_exec['num_success']
+        num_failed_execs=order_exec['num_fail']
+
+        res.update({'Total Number of missed orders: ': str(num_missed)})
+        res.update({'Total Number of assigned but failed orders: ': str(num_failed_execs)})
+        res.update({'Total Number of successfully executed orders: ': str(num_successfully_exec_orders)})
+
+        # assignment
+        for key in self.assignment.keys():
+            count=1
+            for order in self.assignment[key]:
+                res.update({'Assignment ' + key.name + ' ' + str(count) : order.get_summary() })
+                count=count+1
+
+        # weather
+        res.update({'Weather: ': self.weather})
+
+        # fine
+        res.update({'Tot Fines: ': str(self.agg_fine)})
+
         self.stats=res
 
     def build_shift(self,assignment,map):
@@ -367,8 +411,3 @@ class cashaccount:
             self.tot=self.tot-amount
             res=1
         return res
-
-
-class statistics:
-    # summarising various figures for given shift
-    pass

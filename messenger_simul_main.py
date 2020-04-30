@@ -112,11 +112,29 @@ def GetRiderAssignment():
 
     # get Cash Booking and stats
     my_cash.add(current_shift.get_cash_booking())
-    current_shift.get_stats()
     
     return get_html("index").replace("$$STATUS$$","Riders assigned").replace("$$VARSTATS$$",'Shift ID: '+ str(current_shift.shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
 
 @app.route("/ShowStats")
 def show_stats():
-    return get_html('ShowStats')
+    global current_shift
+
+    current_shift.get_stats()
+
+    # get html string
+    result_stats=''
+    for key in current_shift.stats:
+        result_stats+="<p class='stats'>" + key + current_shift.stats[key] +"</p>"   
+    return get_html('ShowStats').replace('$$SHIFTSTATS$$',result_stats)
+
+@app.route("/ShowRiders")
+def show_riders():
+    # build html elements
+    result_rider=''
+    for rider in riders:
+        result_rider+="<p class='rider'" + "Name: "+rider.name +"<br>" + \
+             "Nickname: "+rider.nickname +"<br>" + "Average Speed: "+rider.avgSpeed +"<br>" +  \
+                 "Variable Salary: "+rider.varSalary +"<br>" + "Fix Salary: "+rider.fixSalary +"<br>" + \
+                      "Workload: "+rider.workload +"<br>" + "Reliability: "+rider.reliability +"</p><br><br>"
+    return get_html('ShowRiders').replace('$$SHOWRIDERS$$',result_rider)
