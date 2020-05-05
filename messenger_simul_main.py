@@ -52,9 +52,9 @@ def init():
         res=gen_rider(i+1,config)
         riders.append(res)
     
-    my_cash.add(int(config['Cash']))
-
-    current_shift=shift(dt.time(8,0,0),dt.time(12,0,0),shift_id,[],[],config,[],my_map)
+    my_cash=cashaccount(int(config['Cash']))
+    
+    current_shift=shift(dt.time(8,0,0),dt.time(12,0,0),shift_id,[],[],config,[],my_map,my_cash.tot)
     last_shift={}
     return get_html("index").replace("$$STATUS$$","Game initialised").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
@@ -64,7 +64,7 @@ def PrepareNextShift():
     global last_shift
 
     last_shift=current_shift
-    current_shift=prepare_next_shift(current_shift.shift_id,config,riders,my_map,last_shift)
+    current_shift=prepare_next_shift(current_shift.shift_id,config,riders,my_map,my_cash.tot,last_shift)
     
     # Build html lists
     content_riders=current_shift.availRiders
@@ -132,9 +132,36 @@ def show_stats():
 def show_riders():
     # build html elements
     result_rider=''
+    count=0
     for rider in riders:
-        result_rider+="<p class='rider'" + "Name: "+rider.name +"<br>" + \
-             "Nickname: "+rider.nickname +"<br>" + "Average Speed: "+rider.avgSpeed +"<br>" +  \
-                 "Variable Salary: "+rider.varSalary +"<br>" + "Fix Salary: "+rider.fixSalary +"<br>" + \
-                      "Workload: "+rider.workload +"<br>" + "Reliability: "+rider.reliability +"</p><br><br>"
+        count=count+1
+        result_rider+="<p class='rider'>" + "Rider Nr " + str(count)+"<br>" + \
+            "*********<br>" + \
+            "Name: "+rider.name +"<br>" + \
+            "Nickname: "+rider.nickname +"<br>" + "Average Speed: "+rider.avgSpeed +"<br>" +  \
+            "Variable Salary: "+rider.varSalary +"<br>" + "Fix Salary: "+rider.fixSalary +"<br>" + \
+            "Workload: "+rider.workload +"<br>" + "Reliability: "+rider.reliability +"</p><br><br>"
     return get_html('ShowRiders').replace('$$SHOWRIDERS$$',result_rider)
+
+@app.route("/ShowMap")
+def show_map():
+    # build html elements
+    result_distance='<table>'
+    result_altitude=''
+    for i in range(0,len(my_map.locations)+1):
+        for j in range(0,len(my_map.locations)+1):
+            if i==0: # header
+                if j==0:
+                    result_distance += '<tr> <th> from \ to </th>'
+                else:
+                    result_distance += '<th>' + my_map.locations[j-1] +'</th>'
+            else:
+                if j==0:
+                    result_distance += '<td>' + my_map.locations[i-1] + '</td>'
+                else:
+                    result_distance += '<td>' + str(my_map.distances[(i-1,j-1)])  +'</td>'
+            
+        result_distance += '</tr>'
+
+    result_distance +='</table>'
+    return get_html('ShowMap').replace('$$DISTANCES$$',result_distance)

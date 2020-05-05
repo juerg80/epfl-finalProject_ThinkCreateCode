@@ -40,7 +40,7 @@ def getStatus():
     pass
 
 # Modul: Prepare Next Shift
-def prepare_next_shift(shift_id,config,riders,map,last_shift={}):
+def prepare_next_shift(shift_id,config,riders,map,cash_start,last_shift={}):
     if shift_id==0: # initial state
         available_riders=riders
         time_shift={'t_start': dt.time(8,0,0),'t_end': dt.time(12,0,0)}
@@ -51,7 +51,7 @@ def prepare_next_shift(shift_id,config,riders,map,last_shift={}):
     order_list=get_orders()
 
     # init Shift
-    new_shift=shift(time_shift['t_start'],time_shift['t_end'],shift_id+1,available_riders,order_list,config,{},map)
+    new_shift=shift(time_shift['t_start'],time_shift['t_end'],shift_id+1,available_riders,order_list,config,{},map,cash_start)
     return new_shift
 
 def get_time_shift():
@@ -130,16 +130,18 @@ class rider:
         self.workload=workload # pensum
 
 class shift:
-    def __init__(self,t_start,t_end,shift_id,availRiders,orders,config,assignment,map):
+    def __init__(self,t_start,t_end,shift_id,availRiders,orders,config,assignment,map,cash_start):
         self.t_start=t_start
         self.t_end=t_end
         self.shift_id=shift_id # id
         self.availRiders=availRiders
         self.orders=orders
         self.config=config
+        self.cash_start=cash_start
         self.weather=self.get_weather()
         self.agg_fine=self.get_agg_fine() # verkehrsbussen tot chf
         self.build_shift(assignment,map)
+        self.cash_end=0
     
     def get_weather(self):
         #@work
@@ -190,6 +192,8 @@ class shift:
             my_missed_volume_tot=my_missed_volume_tot + order.volume 
         tot_amount=tot_amount + my_missed_volume_tot * float(self.config['PenaltyMissedOrder'])
         
+        # overwrite cash_end
+        self.cash_end=self.cash_start+tot_amount
         return tot_amount
 
     def get_stats(self):
@@ -216,7 +220,7 @@ class shift:
         for key in self.assignment.keys():
             count=1
             for order in self.assignment[key]:
-                res.update({'Assignment ' + key.name + ' ' + str(count) : order.get_summary() })
+                res.update({'Assignment ' + key.name + ' ' + str(count) + ': ' : order.get_summary() })
                 count=count+1
 
         # weather
@@ -224,6 +228,10 @@ class shift:
 
         # fine
         res.update({'Tot Fines: ': str(self.agg_fine)})
+
+        # cash
+        res.update({'Cash at beginning of shift: ': str(self.cash_start)})
+        res.update({'Cash at end of shift: ': str(self.cash_end)})
 
         self.stats=res
 
