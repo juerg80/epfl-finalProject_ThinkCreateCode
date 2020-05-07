@@ -147,21 +147,27 @@ def show_riders():
 def show_map():
     # build html elements
     result_distance='<table>'
-    result_altitude=''
+    result_altitude='<table>'
     for i in range(0,len(my_map.locations)+1):
         for j in range(0,len(my_map.locations)+1):
             if i==0: # header
                 if j==0:
                     result_distance += '<tr> <th> from \ to </th>'
+                    result_altitude += '<tr> <th> from \ to </th>'
                 else:
                     result_distance += '<th>' + my_map.locations[j-1] +'</th>'
+                    result_altitude += '<th>' + my_map.locations[j-1] +'</th>'
             else:
                 if j==0:
                     result_distance += '<td>' + my_map.locations[i-1] + '</td>'
+                    result_altitude += '<td>' + my_map.locations[i-1] + '</td>'
                 else:
                     result_distance += '<td>' + str(my_map.distances[(i-1,j-1)])  +'</td>'
+                    result_altitude += '<td>' + str(my_map.altitudes[(i-1,j-1)])  +'</td>'
             
         result_distance += '</tr>'
+        result_altitude += '</tr>'
 
     result_distance +='</table>'
-    return get_html('ShowMap').replace('$$DISTANCES$$',result_distance)
+    result_altitude +='</table>'
+    return get_html('ShowMap').replace('$$DISTANCES$$',result_distance).replace('$$ALTITUDES$$',result_altitude)
