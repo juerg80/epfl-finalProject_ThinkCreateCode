@@ -30,7 +30,7 @@ def get_html(page_name):
 # Specify routes
 @app.route("/")
 def homepage():
-    return get_html("index").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
+    return get_html("index").replace("$$STATUS$$","").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
 @app.route("/init")
 def init():
@@ -63,29 +63,32 @@ def PrepareNextShift():
     global current_shift
     global last_shift
 
-    last_shift=current_shift
-    current_shift=prepare_next_shift(current_shift.shift_id,config,riders,my_map,my_cash.tot,last_shift)
-    
-    # Build html lists
-    content_riders=current_shift.availRiders
-    result_riders=""
-    for line in content_riders:
-         result_riders+="<p class='availRider'>"+ line.name +"</p>"
+    if isinstance(current_shift,shift)==False:
+        return get_html("index").replace("$$STATUS$$","Game not yet initialised...").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
+    else:
+        last_shift=current_shift
+        current_shift=prepare_next_shift(current_shift.shift_id,config,riders,my_map,my_cash.tot,last_shift)
+        
+        # Build html lists
+        content_riders=current_shift.availRiders
+        result_riders=""
+        for line in content_riders:
+            result_riders+="<p class='availRider'>"+ line.name +"</p>"
 
-    content_orders=current_shift.orders
-    result_orders=""
-    count=1
-    for line in content_orders:
-        result_orders+="<p class='availOrders'>"+ str(count) +': ' + line.start_loc + ' - ' + line.start_time.strftime('%H:%M')  + ' - ' + line.end_loc + ' - '+ line.end_time.strftime('%H:%M') + ' - '+ str(line.volume) +"</p>"
-        count=count+1
+        content_orders=current_shift.orders
+        result_orders=""
+        count=1
+        for line in content_orders:
+            result_orders+="<p class='availOrders'>"+ str(count) +': ' + line.start_loc + ' - ' + line.start_time.strftime('%H:%M')  + ' - ' + line.end_loc + ' - '+ line.end_time.strftime('%H:%M') + ' - '+ str(line.volume) +"</p>"
+            count=count+1
 
-    # Build Forms
-    num_riders=len(current_shift.availRiders)
-    forms=""
-    for i in range(0,num_riders):
-        forms+=current_shift.availRiders[i].name + ": " + "<input type='text' name=" + current_shift.availRiders[i].name + " class='assign_rider_spec' value='Enter Orders in chronological order, separeted with ;'>" + "<br><br>"
-    
-    return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders).replace("$$ASSIGNMENT$$",forms)
+        # Build Forms
+        num_riders=len(current_shift.availRiders)
+        forms=""
+        for i in range(0,num_riders):
+            forms+=current_shift.availRiders[i].name + ": " + "<input type='text' name=" + current_shift.availRiders[i].name + " class='assign_rider_spec' value='Enter Orders in chronological order, separeted with ;'>" + "<br><br>"
+        
+        return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders).replace("$$ASSIGNMENT$$",forms).replace('$$STATUS_ASSIGNMENT$$','')
     
 
 @app.route("/GetRiderAssignment")
@@ -104,8 +107,7 @@ def GetRiderAssignment():
     result_check_assignment=check_assignment(assignment)
 
     if result_check_assignment==False:
-        #@work (erneuter assigment aufruf mit status fehlermeldung oder so...)
-        pass
+        return get_html("index").replace("$$STATUS$$","Your assignment was invalid! Please assign again (Push Button 'NextShift')").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
     # Build new shift
     current_shift.build_shift(assignment,my_map)
@@ -120,12 +122,15 @@ def GetRiderAssignment():
 def show_stats():
     global current_shift
 
-    current_shift.get_stats()
+    if isinstance(current_shift,shift)==False or current_shift.shift_id==0:
+        result_stats='Game has not started yet...'
+    else:
+        current_shift.get_stats()
 
-    # get html string
-    result_stats=''
-    for key in current_shift.stats:
-        result_stats+="<p class='stats'>" + key + current_shift.stats[key] +"</p>"   
+        # get html string
+        result_stats=''
+        for key in current_shift.stats:
+            result_stats+="<p class='stats'>" + key + current_shift.stats[key] +"</p>"   
     return get_html('ShowStats').replace('$$SHIFTSTATS$$',result_stats)
 
 @app.route("/ShowRiders")

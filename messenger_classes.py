@@ -88,7 +88,11 @@ def transform_assignment(assignment_raw,current_shift):
         rider=current_shift.availRiders[i]
         my_orderlist=[]
         for i in assignment_list:
-            my_orderlist.append(order_list[int(i)-1])
+            if i.isdigit()==False or int(i)==0:
+                my_orderlist.append(None)
+                break
+            else:
+                my_orderlist.append(order_list[int(i)-1])
         assignment.update({rider:my_orderlist})
     return assignment
 
@@ -96,7 +100,6 @@ def transform_assignment(assignment_raw,current_shift):
 def check_assignment(assignment):
     #@work
     return True
-
 
 # Classes
 class order:
@@ -220,8 +223,11 @@ class shift:
         for key in self.assignment.keys():
             count=1
             for order in self.assignment[key]:
-                res.update({'Assignment ' + key.name + ' ' + str(count) + ': ' : order.get_summary() })
-                count=count+1
+                if order == None:
+                    res.update({'Assignment ' + key.name + ' : ' : 'No orders attributed'})
+                else:
+                    res.update({'Assignment ' + key.name + ' ' + str(count) + ': ' : order.get_summary() })
+                    count=count+1
 
         # weather
         res.update({'Weather: ': self.weather})
@@ -246,54 +252,55 @@ class shift:
         self.assignment=assignment
 
     def get_tour(self,my_rider,my_orders,my_map):
-        num_orders=len(my_orders)
-        num_steps=2+num_orders+(num_orders-1)
         my_tour=[]
-        count_order=-1
-        for i in range(0,num_steps):
-            if i==0:
-                flag='Transfer_init'
-                t_start=self.t_start
-                t_end_soll=my_orders[0].start_time
-                loc_start='Company'
-                loc_end=my_orders[0].start_loc
-                volume=0
-                rider=my_rider
-                map=my_map
+        if not(my_orders == [None]):
+            num_orders=len(my_orders)
+            num_steps=2+num_orders+(num_orders-1)
+            count_order=-1
+            for i in range(0,num_steps):
+                if i==0:
+                    flag='Transfer_init'
+                    t_start=self.t_start
+                    t_end_soll=my_orders[0].start_time
+                    loc_start='Company'
+                    loc_end=my_orders[0].start_loc
+                    volume=0
+                    rider=my_rider
+                    map=my_map
 
-            elif i==num_steps-1:
-                flag='Transfer_end'
-                t_start=my_orders[num_orders-1].end_time
-                t_end_soll=self.t_end
-                loc_start=my_orders[num_orders-1].end_loc
-                loc_end='Company'
-                volume=0
-                rider=my_rider
-                map=my_map
+                elif i==num_steps-1:
+                    flag='Transfer_end'
+                    t_start=my_orders[num_orders-1].end_time
+                    t_end_soll=self.t_end
+                    loc_start=my_orders[num_orders-1].end_loc
+                    loc_end='Company'
+                    volume=0
+                    rider=my_rider
+                    map=my_map
 
-            elif i%2==0:
-                flag='Transfer'
-                t_start=my_orders[count_order].end_time
-                t_end_soll=my_orders[count_order+1].start_time
-                loc_start=my_orders[count_order].end_loc
-                loc_end=my_orders[count_order+1].start_loc
-                volume=0
-                rider=my_rider
-                map=my_map
+                elif i%2==0:
+                    flag='Transfer'
+                    t_start=my_orders[count_order].end_time
+                    t_end_soll=my_orders[count_order+1].start_time
+                    loc_start=my_orders[count_order].end_loc
+                    loc_end=my_orders[count_order+1].start_loc
+                    volume=0
+                    rider=my_rider
+                    map=my_map
 
-            else:
-                count_order=count_order+1
-                flag='Order'
-                t_start=my_orders[count_order].start_time
-                t_end_soll=my_orders[count_order].end_time
-                loc_start=my_orders[count_order].start_loc
-                loc_end=my_orders[count_order].end_loc
-                volume=my_orders[count_order].volume
-                rider=my_rider
-                map=my_map
-                
-            my_step=step(flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map,self.config)
-            my_tour.append(my_step)
+                else:
+                    count_order=count_order+1
+                    flag='Order'
+                    t_start=my_orders[count_order].start_time
+                    t_end_soll=my_orders[count_order].end_time
+                    loc_start=my_orders[count_order].start_loc
+                    loc_end=my_orders[count_order].end_loc
+                    volume=my_orders[count_order].volume
+                    rider=my_rider
+                    map=my_map
+                    
+                my_step=step(flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map,self.config)
+                my_tour.append(my_step)
         return my_tour
 
 class tour:
