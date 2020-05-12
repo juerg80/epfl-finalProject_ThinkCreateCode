@@ -1,4 +1,5 @@
 import numpy
+import random
 import datetime as dt
 
 
@@ -36,39 +37,64 @@ def read_map(file):
     map = numpy.loadtxt(file)
     return map
 
-def getStatus():
-    pass
+# def getStatus():
+#     pass
 
 # Modul: Prepare Next Shift
 def prepare_next_shift(shift_id,config,riders,map,cash_start,last_shift={}):
     if shift_id==0: # initial state
         available_riders=riders
-        time_shift={'t_start': dt.time(8,0,0),'t_end': dt.time(12,0,0)}
+        time_shift={'t_start': dt.time(7,0,0),'t_end': dt.time(12,0,0)}
     else:
         available_riders=get_available_riders(riders)
-        time_shift=get_time_shift()
+        time_shift=get_time_shift(last_shift)
     
-    order_list=get_orders()
+    order_list=get_orders(config,time_shift)
 
     # init Shift
     new_shift=shift(time_shift['t_start'],time_shift['t_end'],shift_id+1,available_riders,order_list,config,{},map,cash_start)
     return new_shift
 
-def get_time_shift():
-    #@work
-    return {'t_start': dt.time(8,0,0),'t_end': dt.time(12,0,0)}
+def get_time_shift(last_shift):
+    t_end_last_shift=last_shift.t_end
+    if t_end_last_shift==dt.time(12,0,0):
+        res={'t_start': dt.time(12,0,0),'t_end': dt.time(17,0,0)}
+    elif t_end_last_shift==dt.time(17,0,0):
+        res={'t_start': dt.time(17,0,0),'t_end': dt.time(22,0,0)}
+    elif t_end_last_shift==dt.time(22,0,0):
+        res={'t_start': dt.time(7,0,0),'t_end': dt.time(12,0,0)}
+    return res
 
-def get_cash_last_shift():
-    #@work
-    return 100
-
-def get_orders():
-    #@work
+def get_orders(config,time_shift):
     order_list=[]
-    order_1=order('A',dt.time(10,0,0),'B',dt.time(12,0,0))
-    order_2=order('C',dt.time(9,0,0),'D',dt.time(11,30,0))
-    order_list.append(order_1)
-    order_list.append(order_2)
+    count=0
+    AnzOrder=numpy.random.poisson(int(config['AnzOrder_lambda']),1)
+    for i in range(0,int(AnzOrder)):
+        count=count+1
+        volume_temp=int(random.gauss(int(config['VolumeOrder_mu']),int(config['VolumeOrder_sigma'])))
+        volume=max(int(config['VolumeOrder_min']),volume_temp)
+        min_start=int(random.uniform(0,4*60))
+        min_order=int(random.uniform(15,5*60-min_start))
+
+        # get t_start order
+        order_start_mins=min_start % 60
+        order_start_hours=int((min_start - order_start_mins) / 60)      
+        t_start_order=dt.time(time_shift['t_start'].hour + order_start_hours,order_start_mins)
+
+        # get t_end order
+        order_end_mins=(min_start + min_order) % 60
+        order_end_hours=int((min_start + min_order - order_end_mins) / 60)      
+        t_end_order=dt.time(time_shift['t_start'].hour + order_end_hours,order_end_mins)
+
+        # get loc_start and loc_end
+        locs=random.sample(config['map1'],2)
+        loc_start=locs[0]
+        loc_end=locs[1]
+
+        # create order and append to list
+        order2add=order(count,loc_start,t_start_order,loc_end,t_end_order,volume)
+        order_list.append(order2add)
+
     return order_list
 
 def get_available_riders(riders):
@@ -79,7 +105,7 @@ def get_available_riders(riders):
 # Modul Build Shift
 
 def transform_assignment(assignment_raw,current_shift):
-    # transforms html params in dict
+    # transforms html params in dict (rider: [orders])
     num_riders=len(current_shift.availRiders)
     assignment={}
     order_list=current_shift.orders
@@ -88,7 +114,11 @@ def transform_assignment(assignment_raw,current_shift):
         rider=current_shift.availRiders[i]
         my_orderlist=[]
         for i in assignment_list:
-            if i.isdigit()==False or int(i)==0:
+            if i.isdigit()==False:
+                my_orderlist.append(False)
+            elif int(i)>len(current_shift.orders):
+                my_orderlist.append(False)
+            elif int(i)==0:
                 my_orderlist.append(None)
                 break
             else:
@@ -98,23 +128,36 @@ def transform_assignment(assignment_raw,current_shift):
 
 
 def check_assignment(assignment):
-    #@work
-    return True
+    res=True
+    orders_already_assigned=[]
+    for key in assignment.keys():
+        curr_assign=assignment[key]
+        if curr_assign.count(None)>1:
+            res=False
+            break
+        elif curr_assign.count(False)>0: # non numeric entry or order which does not exist
+            res=False
+            break
+        elif curr_assign.count(None)==0:
+            for order in curr_assign:
+                ord_count=orders_already_assigned.count(order.id)
+                if ord_count>0: # check if already assigned
+                    res=False
+                    break
+                else:
+                    orders_already_assigned.append(order.id)
+    return res
 
 # Classes
 class order:
-    def __init__(self,start_loc,start_time,end_loc,end_time):
+    def __init__(self,id,start_loc,start_time,end_loc,end_time,volume):
+        self.id=id
         self.start_loc=start_loc
         self.start_time=start_time
         self.end_loc=end_loc
         self.end_time=end_time
-        self.volume=self.getVolume()
-
-    def getVolume(self):
-        #@work
-        volume=200
-        return volume
-    
+        self.volume=volume
+   
     def get_summary(self):
         # for stats output
         res='Start: '+ self.start_loc + '(' + str(self.start_time) + ') - End: '+ self.end_loc + '(' + str(self.end_time) + \
@@ -147,12 +190,21 @@ class shift:
         self.cash_end=0
     
     def get_weather(self):
-        #@work
-        return 'sunny'
+        weather=self.config['weather'].split(',')
+        probas_raw=self.config['weather_probas'].split(',')
+        probas=[]
+        for val in probas_raw:
+            probas.append(float(val))
+        res=numpy.random.choice(weather,1,True,probas)
+        return res
     
     def get_agg_fine(self):
-        #@work
-        return 75
+        mean_per_rider=float(self.config['mean_fine_per_rider_and_shift'])
+        std_per_rider=float(self.config['std_fine_per_rider_and_shift'])
+        res=0
+        for rider in self.availRiders:
+            res=res+max(0,random.gauss(mean_per_rider,std_per_rider))
+        return res
 
     def check_missed_orders(self):
         # returns a list of orders which have not been assigned
@@ -205,6 +257,10 @@ class shift:
 
         # shift id
         res.update({'Shift ID: ': str(self.shift_id)})
+
+        # times
+        res.update({'Start Time: ':str(self.t_start)})
+        res.update({'End Time: ':str(self.t_end)})
         
         # Orders
         num_orders=len(self.orders)
@@ -420,9 +476,17 @@ class cashaccount:
 
 
     def remove(self,amount):
-        if amount>self.tot:
-            res=0
-        else:
-            self.tot=self.tot-amount
-            res=1
+        # if amount>self.tot:
+        #     res=0
+        # else:
+        #     self.tot=self.tot-amount
+        #     res=1
+        self.tot=self.tot-amount
+        res=1
         return res
+    
+    def check_balance_negative(self):
+        if self.tot<0:
+            return True
+        else:
+            return False

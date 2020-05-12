@@ -17,6 +17,9 @@ current_shift={}
 last_shift={}
 riders=[]
 my_cash=cashaccount(0)
+result_riders=''
+result_orders=''
+forms=''
 
 
 # define some functions
@@ -62,6 +65,9 @@ def init():
 def PrepareNextShift():
     global current_shift
     global last_shift
+    global result_riders
+    global result_orders
+    global forms
 
     if isinstance(current_shift,shift)==False:
         return get_html("index").replace("$$STATUS$$","Game not yet initialised...").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
@@ -79,16 +85,19 @@ def PrepareNextShift():
         result_orders=""
         count=1
         for line in content_orders:
-            result_orders+="<p class='availOrders'>"+ str(count) +': ' + line.start_loc + ' - ' + line.start_time.strftime('%H:%M')  + ' - ' + line.end_loc + ' - '+ line.end_time.strftime('%H:%M') + ' - '+ str(line.volume) +"</p>"
+            result_orders+="<p class='availOrders'>"+ str(count) +': ' + line.start_loc + ' - ' + line.start_time.strftime('%H:%M')  + ' - ' \
+                + line.end_loc + ' - '+ line.end_time.strftime('%H:%M') + ' - '+ str(line.volume) +"</p>"
             count=count+1
 
         # Build Forms
         num_riders=len(current_shift.availRiders)
         forms=""
         for i in range(0,num_riders):
-            forms+=current_shift.availRiders[i].name + ": " + "<input type='text' name=" + current_shift.availRiders[i].name + " class='assign_rider_spec' value='Enter Orders in chronological order, separeted with ;'>" + "<br><br>"
+            forms+=current_shift.availRiders[i].name + ": " + "<input type='text' name=" + current_shift.availRiders[i].name + \
+                " class='assign_rider_spec' value='Enter Orders in chronological order, separeted with ;'>" + "<br><br>"
         
-        return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders).replace("$$ASSIGNMENT$$",forms).replace('$$STATUS_ASSIGNMENT$$','')
+        return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders).replace("$$ASSIGNMENT$$",forms).\
+            replace('$$STATUS_ASSIGNMENT$$','')
     
 
 @app.route("/GetRiderAssignment")
@@ -107,15 +116,19 @@ def GetRiderAssignment():
     result_check_assignment=check_assignment(assignment)
 
     if result_check_assignment==False:
-        return get_html("index").replace("$$STATUS$$","Your assignment was invalid! Please assign again (Push Button 'NextShift')").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
-
+        return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders).\
+            replace("$$ASSIGNMENT$$",forms).replace('$$STATUS_ASSIGNMENT$$','Your assignment was invalid! Please assign again <br>'+'('+str(assignment_raw)+')')
     # Build new shift
     current_shift.build_shift(assignment,my_map)
 
     # get Cash Booking and stats
     my_cash.add(current_shift.get_cash_booking())
-    
-    return get_html("index").replace("$$STATUS$$","Riders assigned").replace("$$VARSTATS$$",'Shift ID: '+ str(current_shift.shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
+
+    if my_cash.check_balance_negative():
+        status="Game over: all cash is gone..."
+    else:
+        status="Riders assigned"
+    return get_html("index").replace("$$STATUS$$",status).replace("$$VARSTATS$$",'Shift ID: '+ str(current_shift.shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
 
 @app.route("/ShowStats")

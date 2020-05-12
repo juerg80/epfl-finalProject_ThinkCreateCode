@@ -18,3 +18,11 @@ f2_workload:1
 f2_reliability:1
 map1:Company,A,B,C,D,E,F,G
 PenaltyMissedOrder:0.1
+AnzOrder_lambda:3
+VolumeOrder_mu:200
+VolumeOrder_sigma:35
+VolumeOrder_min:50
+weather:sunny,heatwave,rainy,storm
+weather_probas:0.5,0.05,0.4,0.05
+mean_fine_per_rider_and_shift:10
+std_fine_per_rider_and_shift:2.5
