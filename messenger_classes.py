@@ -43,16 +43,14 @@ def read_map(file):
 # Modul: Prepare Next Shift
 def prepare_next_shift(shift_id,config,riders,map,cash_start,last_shift={}):
     if shift_id==0: # initial state
-        available_riders=riders
         time_shift={'t_start': dt.time(7,0,0),'t_end': dt.time(12,0,0)}
     else:
-        available_riders=get_available_riders(riders)
         time_shift=get_time_shift(last_shift)
     
     order_list=get_orders(config,time_shift)
 
     # init Shift
-    new_shift=shift(time_shift['t_start'],time_shift['t_end'],shift_id+1,available_riders,order_list,config,{},map,cash_start)
+    new_shift=shift(time_shift['t_start'],time_shift['t_end'],shift_id+1,riders,order_list,config,{},map,cash_start,last_shift)
     return new_shift
 
 def get_time_shift(last_shift):
@@ -97,10 +95,17 @@ def get_orders(config,time_shift):
 
     return order_list
 
+'''
 def get_available_riders(riders):
-    #@work
+    # check if at time at company
+    
+
+    # include reliability and workload
+    
+
     rider_list=riders
     return rider_list
+'''
 
 # Modul Build Shift
 
@@ -176,18 +181,42 @@ class rider:
         self.workload=workload # pensum
 
 class shift:
-    def __init__(self,t_start,t_end,shift_id,availRiders,orders,config,assignment,map,cash_start):
+    def __init__(self,t_start,t_end,shift_id,riders,orders,config,assignment,map,cash_start,last_shift):
         self.t_start=t_start
         self.t_end=t_end
         self.shift_id=shift_id # id
-        self.availRiders=availRiders
+        self.riders=riders
+        self.last_shift=last_shift
+        self.assignment=assignment
+        self.availRiders=self.get_available_riders()
         self.orders=orders
         self.config=config
         self.cash_start=cash_start
         self.weather=self.get_weather()
         self.agg_fine=self.get_agg_fine() # verkehrsbussen tot chf
-        self.build_shift(assignment,map)
+        self.build_shift(assignment,self.weather,map)
         self.cash_end=0
+
+    def get_available_riders(self):
+        if self.last_shift=={}: # init
+            res=self.riders
+        else:
+            res=[]
+            for rider in self.riders:
+                # check if rider was assigned and at time at company
+                if self.last_shift.assignment[rider]!=[None]:
+                    my_tours=self.last_shift.tours
+                    for tour in my_tours:
+                        if tour.rider==rider:
+                            my_last_step=tour.steps[len(tour.steps)-1]
+                            if my_last_step.is_fail==True:
+                                break
+                # include reliability and workload
+                fakt_reliability=numpy.random.choice((0,1)),1,True,(1-int(rider.reliability),int(rider.reliability))
+                fakt_workload=numpy.random.choice((0,1)),1,True,(1-int(rider.workload),int(rider.workload))
+                if fakt_reliability * fakt_workload == 1:
+                    res.append(rider)
+        return res
     
     def get_weather(self):
         weather=self.config['weather'].split(',')
@@ -196,7 +225,7 @@ class shift:
         for val in probas_raw:
             probas.append(float(val))
         res=numpy.random.choice(weather,1,True,probas)
-        return res
+        return res[0]
     
     def get_agg_fine(self):
         mean_per_rider=float(self.config['mean_fine_per_rider_and_shift'])
@@ -204,12 +233,24 @@ class shift:
         res=0
         for rider in self.availRiders:
             res=res+max(0,random.gauss(mean_per_rider,std_per_rider))
-        return res
+        return round(res,0)
 
     def check_missed_orders(self):
         # returns a list of orders which have not been assigned
-        #@work
-        return []
+        res=[]
+        assignment=self.assignment
+        for order in self.orders:
+            is_assigend=False
+            id=order.id
+            for rider in assignment.keys():
+                if assignment[rider] != [None]:
+                    for ass_order in assignment[rider]:
+                        if ass_order.id==id:
+                            is_assigend=True
+                            break
+            if is_assigend==False:
+                res.append(order)
+        return res
 
     def get_order_exec_summary(self):
         # returns dict with number of assigned and succ executed and assigned and failed
@@ -228,9 +269,13 @@ class shift:
         tot_amount=0
 
         # salaries
-        if self.t_end==dt.time(22,0,0):
-            #@work: book salaries
-            pass
+        for rider in self.availRiders:
+            fix_salary=round(int(rider.fixSalary) / 3,0) # 3 shifts per day
+            if self.assignment[rider]==[None]:
+                var_salary=0
+            else:
+                var_salary=round(int(rider.varSalary) * 5,0) # 5h per shift
+            tot_amount=tot_amount-fix_salary-var_salary
         
         # fines
         tot_amount=tot_amount-self.agg_fine
@@ -245,7 +290,7 @@ class shift:
         my_missed_volume_tot=0
         for order in my_missed_orders:
             my_missed_volume_tot=my_missed_volume_tot + order.volume 
-        tot_amount=tot_amount + my_missed_volume_tot * float(self.config['PenaltyMissedOrder'])
+        tot_amount=tot_amount - my_missed_volume_tot * float(self.config['PenaltyMissedOrder'])
         
         # overwrite cash_end
         self.cash_end=self.cash_start+tot_amount
@@ -291,23 +336,26 @@ class shift:
         # fine
         res.update({'Tot Fines: ': str(self.agg_fine)})
 
+        # bike issues
+        # @ work
+
         # cash
         res.update({'Cash at beginning of shift: ': str(self.cash_start)})
         res.update({'Cash at end of shift: ': str(self.cash_end)})
 
         self.stats=res
 
-    def build_shift(self,assignment,map):
+    def build_shift(self,assignment,weather,map):
         tours=[]
         num_riders=len(assignment)
         for i in range(0,num_riders):
             my_rider=self.availRiders[i]
-            my_tour=self.get_tour(my_rider,assignment[self.availRiders[i]],map)
+            my_tour=self.get_tour(my_rider,assignment[self.availRiders[i]],map,weather)
             tours.append(tour(my_rider,my_tour))
         self.tours=tours
         self.assignment=assignment
 
-    def get_tour(self,my_rider,my_orders,my_map):
+    def get_tour(self,my_rider,my_orders,my_map,weather):
         my_tour=[]
         if not(my_orders == [None]):
             num_orders=len(my_orders)
@@ -355,7 +403,7 @@ class shift:
                     rider=my_rider
                     map=my_map
                     
-                my_step=step(flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map,self.config)
+                my_step=step(flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map,self.config,weather)
                 my_tour.append(my_step)
         return my_tour
 
@@ -393,7 +441,7 @@ class tour:
 
 
 class step:
-    def __init__(self,flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map,config):
+    def __init__(self,flag,t_start,t_end_soll,loc_start,loc_end,volume,rider,map,config,weather):
         self.flag=flag
         self.t_start=t_start
         self.t_end_soll=t_end_soll
@@ -403,23 +451,61 @@ class step:
         self.rider=rider
         self.map=map
         self.config=config
+        self.weather=weather
+        self.bike_issue=self.get_bikeIssue()
         self.avgSpeed_ist=self.get_avgSpeed_ist(rider)
         self.t_end_ist=self.get_t_end_ist()
-        self.bike_issue=self.get_bikeIssue()
         self.is_fail=''
         
-
     def get_bikeIssue(self):
-        #@work
         # 0: no issue
         # 1: minor_issue
         # 2: big_issue
         # 3: major_issue
-        return 0
+        probas_raw=self.config['bike_issue_probas'].split(',')
+        probas=[]
+        for val in probas_raw:
+            probas.append(float(val))
+        res=numpy.random.choice(range(0,4),1,True,probas)
+        return res
 
     def get_avgSpeed_ist(self,rider):
-        #@work
-        avgSpeed=int(rider.avgSpeed)
+        # fakt bike issue
+        if self.bike_issue==0:
+            fakt_bike_issue=1
+        elif self.bike_issue==1:
+            fakt_bike_issue=0.8
+        elif self.bike_issue==2:
+            fakt_bike_issue=0.5
+        elif self.bike_issue==3:
+            fakt_bike_issue=10^(-6) # to avoid div by zero
+        
+        # fakt altitude
+        diff_alt=self.map.get_altitudes(self.loc_start,self.loc_end)
+        if diff_alt<=0:
+            fakt_altitude=2
+        elif diff_alt >= 200:
+            fakt_altitude=0.6
+        elif diff_alt >= 100:
+            fakt_altitude=0.8
+        elif diff_alt >= 50:
+            fakt_altitude=0.9
+        else:
+            fakt_altitude=1
+
+        # fakt weather
+        if self.weather=='sunny':
+            fakt_weather=1
+        elif self.weather=='heatwave':
+            fakt_weather=0.7
+        elif self.weather=='rainy':
+            fakt_weather=0.85
+        elif self.weather=='storm':
+            fakt_weather=0.5
+        
+        # get avgSpeed
+        baseSpeed=int(rider.avgSpeed)
+        avgSpeed=baseSpeed*fakt_bike_issue*fakt_altitude*fakt_weather
         return avgSpeed
 
     def get_t_end_ist(self):
@@ -452,12 +538,16 @@ class map:
         self.distances=distances
     
     def get_distance(self,loc_start,loc_end):
-        #@work
-        return 20
+        idx_from=self.locations.index(loc_start)
+        idx_to=self.locations.index(loc_end)
+        res=self.distances[(idx_from,idx_to)]     
+        return res
 
     def get_altitudes(self,loc_start,loc_end):
-        #@work
-        return 50
+        idx_from=self.locations.index(loc_start)
+        idx_to=self.locations.index(loc_end)
+        res=self.altitudes[(idx_from,idx_to)]     
+        return res
 
 class company:
     pass

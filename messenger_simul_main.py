@@ -57,7 +57,7 @@ def init():
     
     my_cash=cashaccount(int(config['Cash']))
     
-    current_shift=shift(dt.time(8,0,0),dt.time(12,0,0),shift_id,[],[],config,[],my_map,my_cash.tot)
+    current_shift=shift(dt.time(8,0,0),dt.time(12,0,0),shift_id,[],[],config,[],my_map,my_cash.tot,last_shift)
     last_shift={}
     return get_html("index").replace("$$STATUS$$","Game initialised").replace("$$VARSTATS$$","Shift ID: " + str(shift_id)).replace("$$CASHACCOUNT$$",'Current Cash: ' + str(my_cash.tot))
 
@@ -94,7 +94,7 @@ def PrepareNextShift():
         forms=""
         for i in range(0,num_riders):
             forms+=current_shift.availRiders[i].name + ": " + "<input type='text' name=" + current_shift.availRiders[i].name + \
-                " class='assign_rider_spec' value='Enter Orders in chronological order, separeted with ;'>" + "<br><br>"
+                " class='assign_rider_spec' value='0'>" + "<br><br>"
         
         return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders).replace("$$ASSIGNMENT$$",forms).\
             replace('$$STATUS_ASSIGNMENT$$','')
@@ -119,7 +119,7 @@ def GetRiderAssignment():
         return get_html("assignment").replace("$$AVAILABLERIDERS$$",result_riders).replace("$$AVAILORDERS$$",result_orders).\
             replace("$$ASSIGNMENT$$",forms).replace('$$STATUS_ASSIGNMENT$$','Your assignment was invalid! Please assign again <br>'+'('+str(assignment_raw)+')')
     # Build new shift
-    current_shift.build_shift(assignment,my_map)
+    current_shift.build_shift(assignment,current_shift.weather,my_map)
 
     # get Cash Booking and stats
     my_cash.add(current_shift.get_cash_booking())
