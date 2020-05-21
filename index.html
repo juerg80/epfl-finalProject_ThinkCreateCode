@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bike Messenger Simulation</title>
 </head>
-<body>
+<body onload = updateScore(readScore()) onload = updateMessage(compareCurrentVsTopScore())>
     <h1>
         Run your own bicycle messenger service!
     </h1>
@@ -18,10 +18,18 @@
         $$VARSTATS$$
     </p>
 
-    <p>
+    <p id="cashAccount">
         $$CASHACCOUNT$$
     </p>
+    <br>
 
+    <p id="topScore"> 
+        Top Score:
+        <input type="text" value="0" id="field_topScore"><br>
+        <input type="text" value="Give your best...you're still below the top score!" id="comment_topScore">
+    </p>
+
+    <p id="buttons">
     <form action="/init" method="get">
         <input type="submit" id="bt_InitGame"  class="Button_Main" value="Init Game">
     </form>
@@ -41,6 +49,11 @@
     <form action="/PrepareNextShift" method="get">
         <input type="submit" id="bt_PrepareNextShift"  class="Button_Main" value="Next Shift">
     </form>
-    
+
+    <input type="submit" id="bt_ResetTopScore"  class="Button_Main" value="Reset TopScore">
+    </p>
+
+    <script src="static/messenger_game.js"></script>      
+
 </body>
 </html>
