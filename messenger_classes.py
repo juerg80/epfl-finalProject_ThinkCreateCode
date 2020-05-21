@@ -198,7 +198,8 @@ class shift:
         self.cash_end=0
 
     def get_available_riders(self):
-        if self.last_shift=={}: # init
+        # if self.last_shift=={}: # init
+        if self.shift_id==0 or self.shift_id==1:
             res=self.riders
         else:
             res=[]
@@ -212,9 +213,9 @@ class shift:
                             if my_last_step.is_fail==True:
                                 break
                 # include reliability and workload
-                fakt_reliability=numpy.random.choice((0,1)),1,True,(1-int(rider.reliability),int(rider.reliability))
-                fakt_workload=numpy.random.choice((0,1)),1,True,(1-int(rider.workload),int(rider.workload))
-                if fakt_reliability * fakt_workload == 1:
+                fakt_reliability=numpy.random.choice((0,1),1,True,(1-int(rider.reliability),int(rider.reliability)))
+                fakt_workload=numpy.random.choice((0,1),1,True,(1-int(rider.workload),int(rider.workload)))
+                if fakt_reliability[0] * fakt_workload[0] == 1:
                     res.append(rider)
         return res
     
