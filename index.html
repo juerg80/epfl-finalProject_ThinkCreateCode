@@ -4,17 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bike Messenger Simulation</title>
+    <link rel="stylesheet" href="static/style_main.css">
 </head>
-<body onload = updateScore(readScore()) onload = updateMessage(compareCurrentVsTopScore())>
+<body>
     <h1>
         Run your own bicycle messenger service!
     </h1>
 
-    <p>
+    <p class="status">
         $$STATUS$$
     </p>
     <br>
-    <p>
+    <p id="main_varstats">
         $$VARSTATS$$
     </p>
 
@@ -25,8 +26,8 @@
 
     <p id="topScore"> 
         Top Score:
-        <input type="text" value="0" id="field_topScore"><br>
-        <input type="text" value="Give your best...you're still below the top score!" id="comment_topScore">
+        <input type="text" value="0" id="field_topScore">
+        <input type="text" value="Give your best...you're still below the top score!" id="comment_topScore" >
     </p>
 
     <p id="buttons">
@@ -51,6 +52,21 @@
     </form>
 
     <input type="submit" id="bt_ResetTopScore"  class="Button_Main" value="Reset TopScore">
+    </p>
+
+    <hr>
+
+    <p id="rules_nutshell">
+        <h2>In a nutshell: the rules of the game</h2>
+
+        <p id="rules">
+            You run your own bike messenger service and want to make as much cash as possible! <br>
+
+            In every shift there will be a certain amount of orders and some available riders. You have to assign the orders in such a way that every order can be 
+            sucessfully executed and in the end the rider will arive on time at your company to be ready for the next shift! <br>
+
+            But be aware...you're dealing with a nasty environment...there are traffic fines, bike issues, unforseen weather changes, steep hills to climb...assign well!
+        </p>
     </p>
 
     <script src="static/messenger_game.js"></script>      

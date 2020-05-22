@@ -48,5 +48,7 @@ function compareCurrentVsTopScore(){
 // add listener
 buttonResetScore.addEventListener("click",resetScore)
 
+document.onload = updateScore(readScore()) 
+document.onload = updateMessage(compareCurrentVsTopScore())
 
 

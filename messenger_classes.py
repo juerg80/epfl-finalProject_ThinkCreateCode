@@ -37,9 +37,6 @@ def read_map(file):
     map = numpy.loadtxt(file)
     return map
 
-# def getStatus():
-#     pass
-
 # Modul: Prepare Next Shift
 def prepare_next_shift(shift_id,config,riders,map,cash_start,last_shift={}):
     if shift_id==0: # initial state

@@ -1,0 +1,85 @@
+*{
+    background-color: rgb(34, 233, 233);
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+}
+
+h1{
+    font-weight: bolder;
+    color: firebrick;    
+}
+
+.Button_Main{
+    background-color: darkorange;
+    width: 10%;
+    margin-left: 20%;
+    margin-right: 30%;
+    margin-top:10px;
+}
+
+#cashAccount{
+    color: firebrick;
+    font-weight: bold;
+}
+
+#main_varstats{
+    color: firebrick;
+    font-weight: bold;
+}
+
+#topScore{
+    color: firebrick;
+    font-weight: bold;
+}
+
+#field_topScore{
+    background-color: lemonchiffon;
+    font-weight: bold;
+}
+
+#comment_topScore{
+    font-weight: bold;
+    color: firebrick;
+    border: none;
+}
+
+#rules{
+    font-weight: lighter;
+    color: firebrick;
+}
+
+.status{
+    font-weight: bold;
+    color: crimson;
+}
+
+#rider_block{
+    font-weight: bold;
+    color: firebrick;
+}
+
+
+table, th, td {
+    border: 1px solid black;
+    color: firebrick;
+  }
+
+table{
+  width: 100%;
+  font-weight: bold;
+}
+
+.assign_rider_spec{
+    background-color: lemonchiffon;
+}
+
+.stats{
+    text-align: left;
+    color: firebrick;
+}
+
+.rider{
+    font-weight: bold;
+    text-align: left;
+    color: firebrick;
+}
