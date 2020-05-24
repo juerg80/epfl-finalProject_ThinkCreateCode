@@ -7,14 +7,19 @@
 h1{
     font-weight: bolder;
     color: firebrick;    
+    background-color: greenyellow;
+}
+
+h2{
+    background-color: greenyellow;
 }
 
 .Button_Main{
-    background-color: darkorange;
-    width: 10%;
-    margin-left: 20%;
-    margin-right: 30%;
-    margin-top:10px;
+    background-color:greenyellow;
+    width: 4cm;
+    margin-left: 0.5 cm;
+    margin-right: 0.5 cm;
+    border-color: firebrick;
 }
 
 #cashAccount{
@@ -83,3 +88,30 @@ table{
     text-align: left;
     color: firebrick;
 }
+
+.group{
+    color: firebrick;
+    font-weight: bold; 
+    border-radius: 4px;
+    margin: 10px;
+    display: block;
+    position: relative;
+    height: 30px;
+    box-sizing: border-box;
+    padding-right: 50px;
+}
+
+.group_text{
+    margin: 2.5px;
+    display: inline-block;
+}
+
+/* .subgroup{
+    display: inline;
+} */
+
+#list_flow{
+    color: firebrick;
+    text-align: left;
+}
+

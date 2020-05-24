@@ -31,27 +31,68 @@
     </p>
 
     <p id="buttons">
+    <div class="group">
     <form action="/init" method="get">
-        <input type="submit" id="bt_InitGame"  class="Button_Main" value="Init Game">
+        <input type="submit" id="bt_InitGame"  class="Button_Main" value="Init Game"> 
+        <p class="group_text">
+        Initialise the game
+        </p> 
     </form>
+    </div>
 
+    <div class="group">
     <form action="/ShowRiders" method="get">
         <input type="submit" id="bt_ShowRiders"  class="Button_Main" value="Show Riders">
+        <p class="group_text">
+            Show all riders
+        </p>
     </form>
+    </div>
 
+    <div class="group">
     <form action="/ShowMap" method="get">
         <input type="submit" id="bt_ShowMap"  class="Button_Main" value="Show Map">
+        <p class="group_text">
+            Show the current map
+        </p>
     </form>
+    </div>
 
+    <div class="group">
     <form action="/ShowStats" method="get">
         <input type="submit" id="bt_ShowStats"  class="Button_Main" value="Show Stats Last Shift">
+        <p class="group_text">
+            Show selected informations reg the last shift
+        </p>
     </form>
+    </div>
     
+    <div class="group">
     <form action="/PrepareNextShift" method="get">
         <input type="submit" id="bt_PrepareNextShift"  class="Button_Main" value="Next Shift">
+        <p class="group_text">
+            Move on and prepare the next shift...
+        </p>
     </form>
+    </div>
 
+    <div class="group">
     <input type="submit" id="bt_ResetTopScore"  class="Button_Main" value="Reset TopScore">
+    <p class="group_text">
+        Reset Top Score to 0
+    </p>
+    </div>
+    </p>
+
+    <hr>
+    <p id="game_flow">
+        <h2>Game Flow</h2>
+        <ul id="list_flow">
+            <li>Initialise the game</li>
+            <li>As the simulation is structured in 'shifts' you can move on by pushing 'Next Shift'</li>
+            <li>Whenever needed you can watch some infos (stats, riders, map)</li>
+            <li>As soon as your bankaccount is negative, you lost the game</li>
+        </ul>
     </p>
 
     <hr>
