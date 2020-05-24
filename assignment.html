@@ -11,7 +11,7 @@
         <a href="/" id="link">Back to main</a> 
     </header>
 
-    <form action="/ShowRiders" method="get">
+    <form action="/ShowRiders" method="get" target="_blank">
         <input type="submit" id="bt_ShowRiders"  class="Button_Main" value="Show Riders">
     </form>
 
@@ -27,6 +27,9 @@
     </p>
 
     <h2>Orders:</h2>
+    <p id="desc_orders">
+        [location pickup - time pickup - location delivery - time delivery - order volume (CHF)]
+    </p>
     <p id="AvailOrders">
         $$AVAILORDERS$$
     </p>

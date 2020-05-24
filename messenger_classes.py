@@ -511,7 +511,7 @@ class step:
         Tot_mins=self.t_start.minute + int((my_distance/self.avgSpeed_ist)*60)
         mins=Tot_mins % 60
         hours=int((Tot_mins - mins) / 60)        
-        t_end_ist=dt.time(self.t_start.hour + hours , mins)
+        t_end_ist=dt.time(min(self.t_start.hour + hours,23) , mins)
         return t_end_ist
     
     def evaluate_step(self):
